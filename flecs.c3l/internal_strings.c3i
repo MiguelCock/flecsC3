@@ -1,0 +1,10 @@
+// flecs::internal — string / path helpers that return allocated strings.
+// Free results with the Flecs allocator (libc free for the default OS API).
+
+module flecs::internal;
+
+extern fn ZString ecs_id_str(EcsWorld* world, EcsId id);
+extern fn ZString ecs_table_str(EcsWorld* world, EcsTable* table);
+extern fn ZString ecs_get_path_w_sep(EcsWorld* world, EcsEntity parent, EcsEntity child,
+	ZString sep, ZString prefix);
+extern fn EcsWorld* ecs_init_w_args(int argc, ZString* argv);

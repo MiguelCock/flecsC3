@@ -1,0 +1,11 @@
+// flecs::internal — JSON addon (Flecs 4.1.6).
+
+module flecs::internal;
+
+extern fn ZString ecs_world_to_json(EcsWorld* world, EcsWorldToJsonDesc* desc);
+extern fn ZString ecs_world_from_json(EcsWorld* world, ZString json, EcsFromJsonDesc* desc);
+extern fn ZString ecs_entity_to_json(EcsWorld* world, EcsEntity entity, EcsEntityToJsonDesc* desc);
+extern fn ZString ecs_entity_from_json(EcsWorld* world, EcsEntity entity, ZString json, EcsFromJsonDesc* desc);
+extern fn ZString ecs_ptr_to_json(EcsWorld* world, EcsEntity type, void* data);
+extern fn ZString ecs_ptr_from_json(EcsWorld* world, EcsEntity type, void* ptr, ZString json, EcsFromJsonDesc* desc);
+extern fn ZString ecs_type_str(EcsWorld* world, EcsType* type);

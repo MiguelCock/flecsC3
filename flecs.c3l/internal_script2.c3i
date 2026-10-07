@@ -1,0 +1,77 @@
+// flecs::internal — script functions, variables and expressions (Flecs 4.1.6).
+
+module flecs::internal;
+
+alias EcsScriptVars = void;
+alias EcsScriptRuntime = void;
+
+struct EcsScriptVar
+{
+	ZString name;
+	EcsValue value;
+	EcsTypeInfo* type_info;
+	int sp;
+	bool is_const;
+}
+
+struct EcsFunctionCtx
+{
+	EcsWorld* world;
+	EcsEntity function;
+	void* ctx;
+}
+
+alias EcsFunctionCallback = fn void(EcsFunctionCtx* ctx, int argc, EcsValue* argv, EcsValue* result);
+alias EcsVectorFunctionCallback = fn void(EcsFunctionCtx* ctx, int argc, EcsValue* argv, EcsValue* result, int elem_count);
+
+struct EcsScriptParameter
+{
+	ZString name;
+	EcsEntity type;
+}
+
+struct EcsFunctionDesc
+{
+	ZString name;
+	EcsEntity parent;
+	EcsScriptParameter[16] params;
+	EcsEntity return_type;
+	EcsFunctionCallback callback;
+	EcsVectorFunctionCallback[18] vector_callbacks;
+	void* ctx;
+}
+
+extern fn EcsEntity ecs_function_init(EcsWorld* world, EcsFunctionDesc* desc);
+extern fn EcsEntity ecs_method_init(EcsWorld* world, EcsFunctionDesc* desc);
+
+struct EcsExprEvalDesc
+{
+	ZString name;
+	ZString expr;
+	EcsScriptVars* vars;
+	EcsEntity type;
+	EcsScriptLookupAction lookup_action;
+	void* lookup_ctx;
+	bool disable_folding;
+	bool disable_dynamic_variable_binding;
+	bool allow_unresolved_identifiers;
+	EcsScriptRuntime* runtime;
+	void* script_visitor;
+	EcsScriptLookupAction unresolved_identifier_action;
+}
+
+alias EcsScriptLookupAction = fn EcsEntity(EcsWorld* world, ZString value, void* ctx);
+
+extern fn ZString ecs_expr_run(EcsWorld* world, ZString ptr, EcsValue* value, EcsExprEvalDesc* desc);
+extern fn EcsScript* ecs_expr_parse(EcsWorld* world, ZString expr, EcsExprEvalDesc* desc);
+extern fn int ecs_expr_eval(EcsScript* script, EcsValue* value, EcsExprEvalDesc* desc);
+
+extern fn EcsScriptVars* ecs_script_vars_init(EcsWorld* world);
+extern fn void ecs_script_vars_fini(EcsScriptVars* vars);
+extern fn EcsScriptVars* ecs_script_vars_push(EcsScriptVars* parent);
+extern fn EcsScriptVars* ecs_script_vars_pop(EcsScriptVars* vars);
+extern fn EcsScriptVar* ecs_script_vars_declare(EcsScriptVars* vars, ZString name);
+extern fn EcsScriptVar* ecs_script_vars_define_id(EcsScriptVars* vars, ZString name, EcsEntity type);
+extern fn EcsScriptVar* ecs_script_vars_lookup(EcsScriptVars* vars, ZString name);
+
+extern fn int ecs_value_free(EcsWorld* world, EcsEntity type, void* ptr);

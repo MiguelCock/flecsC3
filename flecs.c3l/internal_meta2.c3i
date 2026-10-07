@@ -1,0 +1,238 @@
+// flecs::internal — meta cursor, opaque types, units, serializer (Flecs 4.1.6).
+
+module flecs::internal;
+
+// ---------------------------------------------------------------------------
+// Units
+// ---------------------------------------------------------------------------
+
+struct EcsUnit
+{
+	ZString symbol;
+	EcsEntity prefix;
+	EcsEntity base;
+	EcsEntity over;
+	EcsUnitTranslation translation;
+}
+
+struct EcsUnitPrefix
+{
+	ZString symbol;
+	EcsUnitTranslation translation;
+}
+
+extern const EcsEntity ECS_CELSIUS @cname("EcsCelsius");
+extern const EcsEntity ECS_FAHRENHEIT @cname("EcsFahrenheit");
+extern const EcsEntity ECS_KELVIN @cname("EcsKelvin");
+extern const EcsEntity ECS_PASCAL @cname("EcsPascal");
+extern const EcsEntity ECS_BAR @cname("EcsBar");
+extern const EcsEntity ECS_SECONDS @cname("EcsSeconds");
+extern const EcsEntity ECS_HERTZ @cname("EcsHertz");
+extern const EcsEntity ECS_METERS @cname("EcsMeters");
+extern const EcsEntity ECS_MILLI_METERS @cname("EcsMilliMeters");
+extern const EcsEntity ECS_KILO_GRAMS @cname("EcsKiloGrams");
+
+extern const EcsEntity ECS_TYPE_SERIALIZER @cname("FLECS_IDEcsTypeSerializerID_");
+extern const EcsEntity ECS_UNIT_TYPE @cname("FLECS_IDEcsUnitID_");
+
+// ---------------------------------------------------------------------------
+// Opaque / serializer
+// ---------------------------------------------------------------------------
+
+alias EcsMetaLookupAction = fn EcsEntity(EcsWorld* world, ZString value, void* ctx);
+alias EcsSerializerValue = fn int(EcsSerializer* ser, EcsEntity type, void* value);
+alias EcsSerializerMember = fn int(EcsSerializer* ser, ZString member);
+
+struct EcsSerializer
+{
+	EcsSerializerValue value;
+	EcsSerializerMember member;
+	EcsWorld* world;
+	void* ctx;
+}
+
+alias EcsMetaSerialize = fn int(EcsSerializer* ser, void* src);
+alias EcsMetaSerializeMember = fn int(EcsSerializer* ser, void* src, ZString name);
+alias EcsMetaSerializeElement = fn int(EcsSerializer* ser, void* src, usz elem);
+alias EcsMetaAssignBool = fn void(void* dst, bool value);
+alias EcsMetaAssignChar = fn void(void* dst, char value);
+alias EcsMetaAssignInt = fn void(void* dst, long value);
+alias EcsMetaAssignUint = fn void(void* dst, ulong value);
+alias EcsMetaAssignFloat = fn void(void* dst, double value);
+alias EcsMetaAssignString = fn void(void* dst, ZString value);
+alias EcsMetaAssignEntity = fn void(void* dst, EcsWorld* world, EcsEntity entity);
+alias EcsMetaAssignId = fn void(void* dst, EcsWorld* world, EcsId id);
+alias EcsMetaAssignNull = fn void(void* dst);
+alias EcsMetaClear = fn void(void* dst);
+alias EcsMetaEnsureElement = fn void*(void* dst, usz elem);
+alias EcsMetaEnsureMember = fn void*(void* dst, ZString member);
+alias EcsMetaCount = fn usz(void* dst);
+alias EcsMetaResize = fn void(void* dst, usz count);
+
+struct EcsOpaque
+{
+	EcsEntity as_type;
+	EcsMetaSerialize serialize;
+	EcsMetaSerializeMember serialize_member;
+	EcsMetaSerializeElement serialize_element;
+	EcsMetaAssignBool assign_bool;
+	EcsMetaAssignChar assign_char;
+	EcsMetaAssignInt assign_int;
+	EcsMetaAssignUint assign_uint;
+	EcsMetaAssignFloat assign_float;
+	EcsMetaAssignString assign_string;
+	EcsMetaAssignEntity assign_entity;
+	EcsMetaAssignId assign_id;
+	EcsMetaAssignNull assign_null;
+	EcsMetaClear clear;
+	EcsMetaEnsureElement ensure_element;
+	EcsMetaEnsureMember ensure_member;
+	EcsMetaCount count;
+	EcsMetaResize resize;
+}
+
+struct EcsOpaqueDesc
+{
+	EcsEntity entity;
+	EcsOpaque type;
+}
+
+extern fn EcsEntity ecs_opaque_init(EcsWorld* world, EcsOpaqueDesc* desc);
+
+// ---------------------------------------------------------------------------
+// Meta serializer instructions
+// ---------------------------------------------------------------------------
+
+constdef EcsMetaOpKind : int
+{
+	OP_PUSH_STRUCT,
+	OP_PUSH_ARRAY,
+	OP_PUSH_VECTOR,
+	OP_POP,
+	OP_OPAQUE_STRUCT,
+	OP_OPAQUE_ARRAY,
+	OP_OPAQUE_VECTOR,
+	OP_FORWARD,
+	OP_SCOPE,
+	OP_OPAQUE_VALUE,
+	OP_ENUM,
+	OP_BITMASK,
+	OP_PRIMITIVE,
+	OP_BOOL,
+	OP_CHAR,
+	OP_BYTE,
+	OP_U8,
+	OP_U16,
+	OP_U32,
+	OP_U64,
+	OP_I8,
+	OP_I16,
+	OP_I32,
+	OP_I64,
+	OP_F32,
+	OP_F64,
+	OP_UPTR,
+	OP_IPTR,
+	OP_STRING,
+	OP_ENTITY,
+	OP_ID,
+	META_TYPE_OP_KIND_LAST = 30,
+}
+
+union EcsMetaOpIs
+{
+	EcsHashMap* members;
+	EcsMap* constants;
+	EcsMetaSerialize opaque;
+}
+
+struct EcsMetaOp
+{
+	EcsMetaOpKind kind;
+	EcsMetaOpKind underlying_kind;
+	EcsSize offset;
+	ZString name;
+	EcsSize elem_size;
+	short op_count;
+	short member_index;
+	EcsEntity type;
+	EcsTypeInfo* type_info;
+	EcsMetaOpIs is;
+}
+
+struct EcsTypeSerializer
+{
+	EcsTypeKind kind;
+	EcsVec ops;
+}
+
+extern fn EcsSize ecs_meta_op_get_elem_count(EcsMetaOp* op, void* ptr);
+extern fn EcsMetaOp* ecs_vec_first_op(EcsVec* vec) @cname("ecs_vec_first_t");
+
+// ---------------------------------------------------------------------------
+// Meta cursor
+// ---------------------------------------------------------------------------
+
+struct EcsMetaScope
+{
+	EcsEntity type;
+	EcsMetaOp* ops;
+	short ops_count;
+	short ops_cur;
+	short prev_depth;
+	void* ptr;
+	EcsOpaque* opaque;
+	EcsHashMap* members;
+	bool is_collection;
+	bool is_empty_scope;
+	bool is_moved_scope;
+	int elem;
+	int elem_count;
+}
+
+struct EcsMetaCursor
+{
+	EcsWorld* world;
+	EcsMetaScope[32] scope;
+	short depth;
+	bool valid;
+	bool is_primitive_scope;
+	EcsMetaLookupAction lookup_action;
+	void* lookup_ctx;
+}
+
+extern fn EcsMetaCursor ecs_meta_cursor(EcsWorld* world, EcsEntity type, void* ptr);
+extern fn void* ecs_meta_get_ptr(EcsMetaCursor* cursor);
+extern fn int ecs_meta_next(EcsMetaCursor* cursor);
+extern fn int ecs_meta_elem(EcsMetaCursor* cursor, int elem);
+extern fn int ecs_meta_member(EcsMetaCursor* cursor, ZString name);
+extern fn int ecs_meta_try_member(EcsMetaCursor* cursor, ZString name);
+extern fn int ecs_meta_dotmember(EcsMetaCursor* cursor, ZString name);
+extern fn int ecs_meta_try_dotmember(EcsMetaCursor* cursor, ZString name);
+extern fn int ecs_meta_push(EcsMetaCursor* cursor);
+extern fn int ecs_meta_pop(EcsMetaCursor* cursor);
+extern fn bool ecs_meta_is_collection(EcsMetaCursor* cursor);
+extern fn EcsEntity ecs_meta_get_type(EcsMetaCursor* cursor);
+extern fn EcsEntity ecs_meta_get_unit(EcsMetaCursor* cursor);
+extern fn ZString ecs_meta_get_member(EcsMetaCursor* cursor);
+extern fn EcsEntity ecs_meta_get_member_id(EcsMetaCursor* cursor);
+extern fn int ecs_meta_set_bool(EcsMetaCursor* cursor, bool value);
+extern fn int ecs_meta_set_char(EcsMetaCursor* cursor, char value);
+extern fn int ecs_meta_set_int(EcsMetaCursor* cursor, long value);
+extern fn int ecs_meta_set_uint(EcsMetaCursor* cursor, ulong value);
+extern fn int ecs_meta_set_float(EcsMetaCursor* cursor, double value);
+extern fn int ecs_meta_set_string(EcsMetaCursor* cursor, ZString value);
+extern fn int ecs_meta_set_string_literal(EcsMetaCursor* cursor, ZString value);
+extern fn int ecs_meta_set_entity(EcsMetaCursor* cursor, EcsEntity value);
+extern fn int ecs_meta_set_id(EcsMetaCursor* cursor, EcsId value);
+extern fn int ecs_meta_set_null(EcsMetaCursor* cursor);
+extern fn int ecs_meta_set_value(EcsMetaCursor* cursor, EcsValue* value);
+extern fn bool ecs_meta_get_bool(EcsMetaCursor* cursor);
+extern fn char ecs_meta_get_char(EcsMetaCursor* cursor);
+extern fn long ecs_meta_get_int(EcsMetaCursor* cursor);
+extern fn ulong ecs_meta_get_uint(EcsMetaCursor* cursor);
+extern fn double ecs_meta_get_float(EcsMetaCursor* cursor);
+extern fn ZString ecs_meta_get_string(EcsMetaCursor* cursor);
+extern fn EcsEntity ecs_meta_get_entity(EcsMetaCursor* cursor);
+extern fn EcsId ecs_meta_get_id(EcsMetaCursor* cursor);
+extern fn ZString ecs_meta_serializer_to_str(EcsWorld* world, EcsEntity type);

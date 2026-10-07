@@ -1,0 +1,77 @@
+// flecs::internal — doc, script, metrics, alerts, app and units addons.
+
+module flecs::internal;
+
+// --- doc -------------------------------------------------------------------
+
+extern fn void ecs_doc_set_brief(EcsWorld* world, EcsEntity entity, ZString description);
+extern fn void ecs_doc_set_detail(EcsWorld* world, EcsEntity entity, ZString description);
+extern fn void ecs_doc_set_link(EcsWorld* world, EcsEntity entity, ZString link);
+extern fn void ecs_doc_set_color(EcsWorld* world, EcsEntity entity, ZString color);
+extern fn void ecs_doc_set_name(EcsWorld* world, EcsEntity entity, ZString name);
+extern fn void ecs_doc_set_uuid(EcsWorld* world, EcsEntity entity, ZString uuid);
+extern fn ZString ecs_doc_get_brief(EcsWorld* world, EcsEntity entity);
+extern fn ZString ecs_doc_get_detail(EcsWorld* world, EcsEntity entity);
+extern fn ZString ecs_doc_get_link(EcsWorld* world, EcsEntity entity);
+extern fn ZString ecs_doc_get_color(EcsWorld* world, EcsEntity entity);
+extern fn ZString ecs_doc_get_name(EcsWorld* world, EcsEntity entity);
+extern fn ZString ecs_doc_get_uuid(EcsWorld* world, EcsEntity entity);
+
+// --- script ----------------------------------------------------------------
+
+extern fn int ecs_script_run(EcsWorld* world, ZString name, ZString code, EcsScriptEvalResult* result);
+extern fn int ecs_script_run_file(EcsWorld* world, ZString filename);
+extern fn EcsEntity ecs_script_init(EcsWorld* world, EcsScriptDesc* desc);
+extern fn EcsScript* ecs_script_parse(EcsWorld* world, ZString name, ZString code,
+	EcsScriptEvalDesc* desc, EcsScriptEvalResult* result);
+extern fn int ecs_script_eval(EcsScript* script, EcsScriptEvalDesc* desc, EcsScriptEvalResult* result);
+extern fn void ecs_script_free(EcsScript* script);
+extern fn EcsScriptRuntime* ecs_script_runtime_new();
+extern fn void ecs_script_runtime_free(EcsScriptRuntime* runtime);
+
+// --- metrics ---------------------------------------------------------------
+
+extern const EcsEntity ECS_GAUGE @cname("EcsGauge");
+extern const EcsEntity ECS_COUNTER @cname("EcsCounter");
+extern const EcsEntity ECS_COUNTER_INCREMENT @cname("EcsCounterIncrement");
+extern const EcsEntity ECS_COUNTER_ID @cname("EcsCounterId");
+
+// Metrics/alerts/units are not imported by ecs_init(); import them explicitly.
+extern fn void flecs_metrics_import(EcsWorld* world) @cname("FlecsMetricsImport");
+extern fn void flecs_alerts_import(EcsWorld* world) @cname("FlecsAlertsImport");
+extern fn void flecs_units_import(EcsWorld* world) @cname("FlecsUnitsImport");
+
+extern fn EcsEntity ecs_metric_init(EcsWorld* world, EcsMetricDesc* desc);
+
+// --- alerts ----------------------------------------------------------------
+
+extern const EcsEntity ECS_ALERT_INFO @cname("EcsAlertInfo");
+extern const EcsEntity ECS_ALERT_WARNING @cname("EcsAlertWarning");
+extern const EcsEntity ECS_ALERT_ERROR @cname("EcsAlertError");
+extern const EcsEntity ECS_ALERT_CRITICAL @cname("EcsAlertCritical");
+
+extern fn EcsEntity ecs_alert_init(EcsWorld* world, EcsAlertDesc* desc);
+extern fn EcsEntity ecs_get_alert(EcsWorld* world, EcsEntity entity, EcsEntity alert);
+extern fn int ecs_get_alert_count(EcsWorld* world, EcsEntity entity, EcsEntity alert);
+
+// --- app -------------------------------------------------------------------
+
+extern fn int ecs_app_run(EcsWorld* world, EcsAppDesc* desc);
+extern fn int ecs_app_run_frame(EcsWorld* world, EcsAppDesc* desc);
+extern fn int ecs_app_set_run_action(EcsAppRunAction callback);
+extern fn int ecs_app_set_frame_action(EcsAppFrameAction callback);
+
+// --- units -----------------------------------------------------------------
+
+extern fn EcsEntity ecs_unit_init(EcsWorld* world, EcsUnitDesc* desc);
+extern fn EcsEntity ecs_unit_prefix_init(EcsWorld* world, EcsUnitPrefixDesc* desc);
+
+// --- http / rest -----------------------------------------------------------
+
+extern fn EcsHttpServer* ecs_http_server_init(EcsHttpServerDesc* desc);
+extern fn void ecs_http_server_fini(EcsHttpServer* server);
+extern fn int ecs_http_server_start(EcsHttpServer* server);
+extern fn void ecs_http_server_dequeue(EcsHttpServer* server, float delta_time);
+extern fn void ecs_http_server_stop(EcsHttpServer* server);
+extern fn EcsHttpServer* ecs_rest_server_init(EcsWorld* world, EcsHttpServerDesc* desc);
+extern fn void ecs_rest_server_fini(EcsHttpServer* server);

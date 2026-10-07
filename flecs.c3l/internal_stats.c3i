@@ -1,0 +1,29 @@
+// flecs::internal — stats addon.
+
+module flecs::internal;
+
+extern fn void ecs_world_stats_get(EcsWorld* world, EcsWorldStats* stats);
+extern fn void ecs_world_stats_reduce(EcsWorldStats* dst, EcsWorldStats* src);
+extern fn void ecs_world_stats_reduce_last(EcsWorldStats* stats, EcsWorldStats* old, int count);
+extern fn void ecs_world_stats_repeat_last(EcsWorldStats* stats);
+extern fn void ecs_world_stats_copy_last(EcsWorldStats* dst, EcsWorldStats* src);
+extern fn void ecs_world_stats_log(EcsWorld* world, EcsWorldStats* stats);
+
+extern fn void ecs_query_stats_get(EcsWorld* world, EcsQuery* query, EcsQueryStats* stats);
+extern fn void ecs_query_cache_stats_reduce(EcsQueryStats* dst, EcsQueryStats* src);
+extern fn void ecs_query_cache_stats_reduce_last(EcsQueryStats* stats, EcsQueryStats* old, int count);
+extern fn void ecs_query_cache_stats_repeat_last(EcsQueryStats* stats);
+extern fn void ecs_query_cache_stats_copy_last(EcsQueryStats* dst, EcsQueryStats* src);
+
+extern fn bool ecs_system_stats_get(EcsWorld* world, EcsEntity system, EcsSystemStats* stats);
+extern fn void ecs_system_stats_reduce(EcsSystemStats* dst, EcsSystemStats* src);
+extern fn void ecs_system_stats_reduce_last(EcsSystemStats* stats, EcsSystemStats* old, int count);
+extern fn void ecs_system_stats_repeat_last(EcsSystemStats* stats);
+extern fn void ecs_system_stats_copy_last(EcsSystemStats* dst, EcsSystemStats* src);
+
+extern fn bool ecs_pipeline_stats_get(EcsWorld* world, EcsEntity pipeline, EcsPipelineStats* stats);
+extern fn void ecs_pipeline_stats_fini(EcsPipelineStats* stats);
+extern fn void ecs_pipeline_stats_reduce(EcsPipelineStats* dst, EcsPipelineStats* src);
+extern fn void ecs_pipeline_stats_reduce_last(EcsPipelineStats* stats, EcsPipelineStats* old, int count);
+extern fn void ecs_pipeline_stats_repeat_last(EcsPipelineStats* stats);
+extern fn void ecs_pipeline_stats_copy_last(EcsPipelineStats* dst, EcsPipelineStats* src);

@@ -1,0 +1,274 @@
+// flecs::internal — core API functions (Flecs 4.1.6).
+
+module flecs::internal;
+
+// ---------------------------------------------------------------------------
+// World
+// ---------------------------------------------------------------------------
+
+extern fn EcsWorld* ecs_init();
+extern fn EcsWorld* ecs_mini();
+extern fn int ecs_fini(EcsWorld* world);
+extern fn bool ecs_is_fini(EcsWorld* world);
+extern fn float ecs_frame_begin(EcsWorld* world, float delta_time);
+extern fn void ecs_frame_end(EcsWorld* world);
+extern fn bool ecs_progress(EcsWorld* world, float delta_time);
+extern fn void ecs_quit(EcsWorld* world);
+extern fn bool ecs_should_quit(EcsWorld* world);
+extern fn void ecs_set_target_fps(EcsWorld* world, float fps);
+extern fn void ecs_set_time_scale(EcsWorld* world, float scale);
+extern fn void ecs_measure_frame_time(EcsWorld* world, bool enable);
+extern fn void ecs_measure_system_time(EcsWorld* world, bool enable);
+extern fn void ecs_set_default_query_flags(EcsWorld* world, EcsFlags32 flags);
+extern fn void ecs_dim(EcsWorld* world, int entity_count);
+extern fn void ecs_shrink(EcsWorld* world);
+extern fn void ecs_run_aperiodic(EcsWorld* world, EcsFlags32 flags);
+extern fn void ecs_set_threads(EcsWorld* world, int threads);
+extern fn void ecs_set_task_threads(EcsWorld* world, int task_threads);
+extern fn bool ecs_readonly_begin(EcsWorld* world, bool multi_threaded);
+extern fn void ecs_readonly_end(EcsWorld* world);
+extern fn void ecs_merge(EcsWorld* stage);
+extern fn void ecs_set_stage_count(EcsWorld* world, int stages);
+extern fn int ecs_get_stage_count(EcsWorld* world);
+extern fn EcsWorld* ecs_get_stage(EcsWorld* world, int stage_id);
+extern fn int ecs_stage_get_id(EcsWorld* world);
+extern fn bool ecs_stage_is_readonly(EcsWorld* world);
+extern fn EcsWorld* ecs_stage_new(EcsWorld* world);
+extern fn void ecs_stage_free(EcsWorld* stage);
+extern fn bool ecs_defer_begin(EcsWorld* world);
+extern fn bool ecs_defer_end(EcsWorld* world);
+extern fn void ecs_defer_suspend(EcsWorld* world);
+extern fn void ecs_defer_resume(EcsWorld* world);
+extern fn bool ecs_is_deferred(EcsWorld* world);
+extern fn bool ecs_is_defer_suspended(EcsWorld* world);
+extern fn void* ecs_get_ctx(EcsWorld* world);
+extern fn void ecs_set_ctx(EcsWorld* world, void* ctx, EcsCtxFree ctx_free);
+extern fn void* ecs_get_binding_ctx(EcsWorld* world);
+extern fn void ecs_set_binding_ctx(EcsWorld* world, void* ctx, EcsCtxFree ctx_free);
+extern fn EcsBuildInfo* ecs_get_build_info();
+extern fn EcsWorldInfo* ecs_get_world_info(EcsWorld* world);
+extern fn EcsPoly* ecs_get_world(EcsPoly* poly);
+extern fn EcsEntity ecs_import(EcsWorld* world, EcsModuleAction mod_action, ZString module_name);
+extern fn EcsEntity ecs_import_c(EcsWorld* world, EcsModuleAction mod_action, ZString module_name_c);
+extern fn EcsEntity ecs_module_init(EcsWorld* world, ZString c_name, EcsComponentDesc* desc);
+
+// ---------------------------------------------------------------------------
+// Entities
+// ---------------------------------------------------------------------------
+
+extern fn EcsEntity ecs_new(EcsWorld* world);
+extern fn EcsEntity ecs_new_low_id(EcsWorld* world);
+extern fn EcsEntity ecs_new_w_id(EcsWorld* world, EcsId component);
+extern fn EcsEntity ecs_new_w_table(EcsWorld* world, EcsTable* table);
+extern fn EcsEntity ecs_new_w_parent(EcsWorld* world, EcsEntity parent, ZString name);
+extern fn EcsEntity ecs_entity_init(EcsWorld* world, EcsEntityDesc* desc);
+extern fn EcsEntity* ecs_bulk_init(EcsWorld* world, EcsBulkDesc* desc);
+extern fn EcsEntity* ecs_bulk_new_w_id(EcsWorld* world, EcsId component, int count);
+extern fn void ecs_delete(EcsWorld* world, EcsEntity entity);
+extern fn void ecs_clear(EcsWorld* world, EcsEntity entity);
+extern fn EcsEntity ecs_clone(EcsWorld* world, EcsEntity dst, EcsEntity src, bool copy_value);
+extern fn bool ecs_is_alive(EcsWorld* world, EcsEntity e);
+extern fn bool ecs_is_valid(EcsWorld* world, EcsEntity e);
+extern fn bool ecs_exists(EcsWorld* world, EcsEntity entity);
+extern fn EcsEntity ecs_get_alive(EcsWorld* world, EcsEntity e);
+extern fn void ecs_make_alive(EcsWorld* world, EcsEntity entity);
+extern fn void ecs_make_alive_id(EcsWorld* world, EcsId component);
+extern fn void ecs_set_version(EcsWorld* world, EcsEntity entity);
+extern fn uint ecs_get_version(EcsEntity entity);
+extern fn EcsId ecs_strip_generation(EcsEntity e);
+extern fn EcsEntity ecs_lookup(EcsWorld* world, ZString path);
+extern fn EcsEntity ecs_lookup_child(EcsWorld* world, EcsEntity parent, ZString name);
+extern fn EcsEntity ecs_lookup_path_w_sep(EcsWorld* world, EcsEntity parent, ZString path, ZString sep, ZString prefix, bool recursive);
+extern fn EcsEntity ecs_lookup_symbol(EcsWorld* world, ZString symbol, bool lookup_as_path, bool recursive);
+extern fn EcsEntity ecs_new_from_path_w_sep(EcsWorld* world, EcsEntity parent, ZString path, ZString sep, ZString prefix);
+extern fn EcsEntity ecs_add_path_w_sep(EcsWorld* world, EcsEntity entity, EcsEntity parent, ZString path, ZString sep, ZString prefix);
+extern fn EcsEntity ecs_set_name(EcsWorld* world, EcsEntity entity, ZString name);
+extern fn ZString ecs_get_name(EcsWorld* world, EcsEntity entity);
+extern fn EcsEntity ecs_set_symbol(EcsWorld* world, EcsEntity entity, ZString symbol);
+extern fn ZString ecs_get_symbol(EcsWorld* world, EcsEntity entity);
+extern fn void ecs_set_alias(EcsWorld* world, EcsEntity entity, ZString alias_name);
+extern fn ZString ecs_set_name_prefix(EcsWorld* world, ZString prefix);
+extern fn EcsEntity ecs_get_parent(EcsWorld* world, EcsEntity entity);
+extern fn EcsEntity ecs_get_target(EcsWorld* world, EcsEntity entity, EcsEntity rel, int index);
+extern fn EcsEntity ecs_get_target_for_id(EcsWorld* world, EcsEntity entity, EcsEntity rel, EcsId component);
+extern fn int ecs_get_depth(EcsWorld* world, EcsEntity entity, EcsEntity rel);
+extern fn EcsEntity ecs_get_scope(EcsWorld* world);
+extern fn EcsEntity ecs_set_scope(EcsWorld* world, EcsEntity scope);
+extern fn EcsId ecs_get_with(EcsWorld* world);
+extern fn EcsId ecs_set_with(EcsWorld* world, EcsId component);
+extern fn void ecs_set_child_order(EcsWorld* world, EcsEntity parent, EcsEntity* children, int child_count);
+extern fn EcsEntityRange* ecs_entity_range_get(EcsWorld* world);
+extern fn EcsEntityRange* ecs_entity_range_new(EcsWorld* world, uint min, uint max);
+extern fn void ecs_entity_range_set(EcsWorld* world, EcsEntityRange* range);
+extern fn EcsEntity ecs_get_max_id(EcsWorld* world);
+extern fn EcsIter ecs_children(EcsWorld* world, EcsEntity parent);
+extern fn EcsIter ecs_children_w_rel(EcsWorld* world, EcsEntity relationship, EcsEntity parent);
+extern fn bool ecs_children_next(EcsIter* it);
+
+// ---------------------------------------------------------------------------
+// IDs / pairs
+// ---------------------------------------------------------------------------
+
+extern fn EcsId ecs_make_pair(EcsEntity first, EcsEntity second);
+extern fn bool ecs_id_is_pair(EcsId component);
+extern fn bool ecs_id_is_wildcard(EcsId component);
+extern fn bool ecs_id_is_any(EcsId component);
+extern fn bool ecs_id_is_valid(EcsWorld* world, EcsId component);
+extern fn bool ecs_id_is_tag(EcsWorld* world, EcsId component);
+extern fn bool ecs_id_match(EcsId component, EcsId pattern);
+extern fn bool ecs_id_in_use(EcsWorld* world, EcsId component);
+extern fn EcsFlags32 ecs_id_get_flags(EcsWorld* world, EcsId component);
+extern fn EcsId ecs_id_from_str(EcsWorld* world, ZString expr);
+extern fn EcsEntity ecs_get_typeid(EcsWorld* world, EcsId component);
+
+// ---------------------------------------------------------------------------
+// Adding / removing / querying components
+// ---------------------------------------------------------------------------
+
+extern fn void ecs_add_id(EcsWorld* world, EcsEntity entity, EcsId component);
+extern fn void ecs_remove_id(EcsWorld* world, EcsEntity entity, EcsId component);
+extern fn void ecs_auto_override_id(EcsWorld* world, EcsEntity entity, EcsId component);
+extern fn bool ecs_has_id(EcsWorld* world, EcsEntity entity, EcsId component);
+extern fn bool ecs_owns_id(EcsWorld* world, EcsEntity entity, EcsId component);
+extern fn bool ecs_is_enabled_id(EcsWorld* world, EcsEntity entity, EcsId component);
+extern fn void ecs_enable_id(EcsWorld* world, EcsEntity entity, EcsId component, bool enable);
+extern fn void ecs_enable(EcsWorld* world, EcsEntity entity, bool enabled);
+extern fn void ecs_remove_all(EcsWorld* world, EcsId component);
+extern fn void ecs_delete_with(EcsWorld* world, EcsId component);
+extern fn int ecs_count_id(EcsWorld* world, EcsId component);
+
+extern fn void* ecs_get_id(EcsWorld* world, EcsEntity entity, EcsId component);
+extern fn void* ecs_get_mut_id(EcsWorld* world, EcsEntity entity, EcsId component);
+extern fn void* ecs_ensure_id(EcsWorld* world, EcsEntity entity, EcsId component, int size);
+extern fn void* ecs_emplace_id(EcsWorld* world, EcsEntity entity, EcsId component, int size, bool* is_new);
+extern fn void ecs_set_id(EcsWorld* world, EcsEntity entity, EcsId component, int size, void* ptr);
+extern fn void ecs_modified_id(EcsWorld* world, EcsEntity entity, EcsId component);
+
+extern fn EcsType* ecs_get_type(EcsWorld* world, EcsEntity entity);
+extern fn EcsTypeInfo* ecs_get_type_info(EcsWorld* world, EcsId component);
+extern fn EcsTypeHooks* ecs_get_hooks_id(EcsWorld* world, EcsEntity component);
+extern fn void ecs_set_hooks_id(EcsWorld* world, EcsEntity component, EcsTypeHooks* hooks);
+
+// ---------------------------------------------------------------------------
+// Components
+// ---------------------------------------------------------------------------
+
+extern fn EcsEntity ecs_component_init(EcsWorld* world, EcsComponentDesc* desc);
+
+// ---------------------------------------------------------------------------
+// Refs
+// ---------------------------------------------------------------------------
+
+extern fn EcsRef ecs_ref_init_id(EcsWorld* world, EcsEntity entity, EcsId component);
+extern fn void* ecs_ref_get_id(EcsWorld* world, EcsRef* ref, EcsId component);
+extern fn void ecs_ref_update(EcsWorld* world, EcsRef* ref, EcsId component);
+
+// ---------------------------------------------------------------------------
+// Queries
+// ---------------------------------------------------------------------------
+
+extern fn EcsQuery* ecs_query_init(EcsWorld* world, EcsQueryDesc* desc);
+extern fn void ecs_query_fini(EcsQuery* query);
+extern fn EcsQuery* ecs_query_update(EcsWorld* world, EcsEntity entity, EcsQueryDesc* desc);
+extern fn EcsQuery* ecs_query_get(EcsWorld* world, EcsEntity query);
+extern fn EcsIter ecs_query_iter(EcsWorld* world, EcsQuery* query);
+extern fn bool ecs_query_next(EcsIter* it);
+extern fn bool ecs_query_changed(EcsQuery* query);
+extern fn EcsQueryCount ecs_query_count(EcsQuery* query);
+extern fn int ecs_query_match_count(EcsQuery* query);
+extern fn int ecs_query_find_var(EcsQuery* query, ZString name);
+extern fn ZString ecs_query_var_name(EcsQuery* query, int var_id);
+extern fn bool ecs_query_var_is_entity(EcsQuery* query, int var_id);
+extern fn EcsQueryGroupInfo* ecs_query_get_group_info(EcsQuery* query, ulong group_id);
+extern fn void* ecs_query_get_group_ctx(EcsQuery* query, ulong group_id);
+extern fn bool ecs_query_has(EcsQuery* query, EcsEntity entity, EcsIter* it);
+
+// ---------------------------------------------------------------------------
+// Observers
+// ---------------------------------------------------------------------------
+
+extern fn EcsEntity ecs_observer_init(EcsWorld* world, EcsObserverDesc* desc);
+extern fn EcsEntity ecs_observer_update(EcsWorld* world, EcsEntity observer, EcsObserverDesc* desc);
+extern fn EcsObserver* ecs_observer_get(EcsWorld* world, EcsEntity observer);
+extern fn void ecs_emit(EcsWorld* world, EcsEventDesc* desc);
+extern fn void ecs_enqueue(EcsWorld* world, EcsEventDesc* desc);
+
+// ---------------------------------------------------------------------------
+// Iterators
+// ---------------------------------------------------------------------------
+
+extern fn bool ecs_iter_next(EcsIter* it);
+extern fn void ecs_iter_fini(EcsIter* it);
+extern fn int ecs_iter_count(EcsIter* it);
+extern fn bool ecs_iter_is_true(EcsIter* it);
+extern fn EcsEntity ecs_iter_first(EcsIter* it);
+extern fn bool ecs_iter_changed(EcsIter* it);
+extern fn void ecs_iter_skip(EcsIter* it);
+extern fn ulong ecs_iter_get_group(EcsIter* it);
+extern fn void ecs_iter_set_group(EcsIter* it, ulong group_id);
+extern fn EcsEntity ecs_iter_get_var(EcsIter* it, int var_id);
+extern fn void ecs_iter_set_var(EcsIter* it, int var_id, EcsEntity entity);
+extern fn int ecs_iter_get_var_count(EcsIter* it);
+extern fn ZString ecs_iter_get_var_name(EcsIter* it, int var_id);
+extern fn bool ecs_iter_var_is_constrained(EcsIter* it, int var_id);
+extern fn EcsIter ecs_each_id(EcsWorld* world, EcsId component);
+extern fn bool ecs_each_next(EcsIter* it);
+extern fn EcsIter ecs_page_iter(EcsIter* it, int offset, int limit);
+extern fn bool ecs_page_next(EcsIter* it);
+
+extern fn void* ecs_field_w_size(EcsIter* it, int size, ichar index);
+extern fn void* ecs_field_at_w_size(EcsIter* it, int size, ichar index, int row);
+extern fn EcsId ecs_field_id(EcsIter* it, ichar index);
+extern fn bool ecs_field_is_set(EcsIter* it, ichar index);
+extern fn bool ecs_field_is_self(EcsIter* it, ichar index);
+extern fn bool ecs_field_is_readonly(EcsIter* it, ichar index);
+extern fn bool ecs_field_is_writeonly(EcsIter* it, ichar index);
+extern fn int ecs_field_size(EcsIter* it, ichar index);
+extern fn int ecs_field_column(EcsIter* it, ichar index);
+extern fn EcsEntity ecs_field_src(EcsIter* it, ichar index);
+
+// ---------------------------------------------------------------------------
+// Tables
+// ---------------------------------------------------------------------------
+
+extern fn int ecs_table_count(EcsTable* table);
+extern fn int ecs_table_size(EcsTable* table);
+extern fn EcsType* ecs_table_get_type(EcsTable* table);
+extern fn bool ecs_table_has_id(EcsWorld* world, EcsTable* table, EcsId component);
+extern fn EcsEntity* ecs_table_entities(EcsTable* table);
+extern fn void* ecs_table_get_id(EcsWorld* world, EcsTable* table, EcsId component, int offset);
+extern fn int ecs_table_get_column_index(EcsWorld* world, EcsTable* table, EcsId component);
+extern fn int ecs_table_get_type_index(EcsWorld* world, EcsTable* table, EcsId component);
+extern fn EcsTable* ecs_table_find(EcsWorld* world, EcsId* ids, int id_count);
+extern fn EcsTable* ecs_table_add_id(EcsWorld* world, EcsTable* table, EcsId component);
+extern fn EcsTable* ecs_table_remove_id(EcsWorld* world, EcsTable* table, EcsId component);
+extern fn EcsTable* ecs_get_table(EcsWorld* world, EcsEntity entity);
+
+// ---------------------------------------------------------------------------
+// Systems / pipeline
+// ---------------------------------------------------------------------------
+
+extern fn EcsEntity ecs_system_init(EcsWorld* world, EcsSystemDesc* desc);
+extern fn EcsEntity ecs_system_update(EcsWorld* world, EcsEntity system, EcsSystemDesc* desc);
+extern fn EcsEntity ecs_run(EcsWorld* world, EcsEntity system, float delta_time, void* param);
+extern fn EcsEntity ecs_run_worker(EcsWorld* world, EcsEntity system, int stage_current, int stage_count, float delta_time, void* param);
+extern fn EcsEntity ecs_pipeline_init(EcsWorld* world, EcsPipelineDesc* desc);
+extern fn EcsEntity ecs_pipeline_update(EcsWorld* world, EcsEntity pipeline, EcsPipelineDesc* desc);
+extern fn void ecs_run_pipeline(EcsWorld* world, EcsEntity pipeline, float delta_time);
+extern fn EcsEntity ecs_get_pipeline(EcsWorld* world);
+extern fn void ecs_set_pipeline(EcsWorld* world, EcsEntity pipeline);
+
+// ---------------------------------------------------------------------------
+// Timers
+// ---------------------------------------------------------------------------
+
+extern fn EcsEntity ecs_set_interval(EcsWorld* world, EcsEntity tick_source, float interval);
+extern fn float ecs_get_interval(EcsWorld* world, EcsEntity tick_source);
+extern fn EcsEntity ecs_set_timeout(EcsWorld* world, EcsEntity tick_source, float timeout);
+extern fn float ecs_get_timeout(EcsWorld* world, EcsEntity tick_source);
+extern fn EcsEntity ecs_set_rate(EcsWorld* world, EcsEntity tick_source, int rate, EcsEntity source);
+extern fn void ecs_set_tick_source(EcsWorld* world, EcsEntity system, EcsEntity tick_source);
+extern fn void ecs_start_timer(EcsWorld* world, EcsEntity tick_source);
+extern fn void ecs_stop_timer(EcsWorld* world, EcsEntity tick_source);
+extern fn void ecs_reset_timer(EcsWorld* world, EcsEntity tick_source);
+extern fn void ecs_randomize_timers(EcsWorld* world);

@@ -1,0 +1,17 @@
+{
+  "langrev": "1",
+  "warnings": [ "no-unused" ],
+  "dependency-search-paths": [ "." ],
+  "dependencies": [ "flecs" ],
+  "test-sources": [ "test/**" ],
+  "build-dir": "build",
+  "output": "build",
+  "targets": {
+    "smoke": {
+      "type": "executable",
+      "sources": [ "examples/quickstart.c3" ]
+    }
+  },
+  "cpu": "generic",
+  "opt": "O0"
+}

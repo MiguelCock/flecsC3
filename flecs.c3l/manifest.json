@@ -1,0 +1,26 @@
+{
+  "provides": "flecs",
+  "c-sources": [ "c/flecs.c" ],
+  "c-include-dirs": [ "c" ],
+  "cflags": "-std=gnu11 -D_GNU_SOURCE -w",
+  "targets": {
+    "linux-x64": {
+      "linked-libraries": [ "pthread", "m", "dl" ]
+    },
+    "linux-x86": {
+      "linked-libraries": [ "pthread", "m", "dl" ]
+    },
+    "linux-aarch64": {
+      "linked-libraries": [ "pthread", "m", "dl" ]
+    },
+    "macos-x64": {
+      "linked-libraries": [ "pthread", "m" ]
+    },
+    "macos-aarch64": {
+      "linked-libraries": [ "pthread", "m" ]
+    },
+    "windows-x64": {
+      "linked-libraries": [ ]
+    }
+  }
+}

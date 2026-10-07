@@ -1,0 +1,10 @@
+// flecs::internal — log addon (Flecs 4.1.6).
+
+module flecs::internal;
+
+extern fn int ecs_log_set_level(int level);
+extern fn int ecs_log_get_level();
+extern fn bool ecs_log_enable_colors(bool enabled);
+extern fn bool ecs_log_enable_timestamp(bool enabled);
+extern fn bool ecs_log_enable_timedelta(bool enabled);
+extern fn int ecs_log_last_error();

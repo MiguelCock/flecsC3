@@ -1,0 +1,1269 @@
+// flecs::internal
+//
+// Raw FFI declarations for the Flecs C API (Flecs 4.1.6).
+// Internal plumbing for the public `flecs` module; not a supported API surface.
+
+module flecs::internal;
+
+// ---------------------------------------------------------------------------
+// Scalar aliases
+// ---------------------------------------------------------------------------
+
+alias EcsId = ulong;
+alias EcsEntity = ulong;
+alias EcsSize = int;
+alias EcsFtime = float;
+alias EcsFlags8 = char;
+alias EcsFlags16 = ushort;
+alias EcsFlags32 = uint;
+alias EcsFlags64 = ulong;
+alias EcsTermset = uint;
+alias EcsPoly = void;
+
+// Opaque handle types.
+alias EcsWorld = void;
+alias EcsStage = void;
+alias EcsTable = void;
+alias EcsQuery = void;
+alias EcsObserver = void;
+alias EcsObservable = void;
+alias EcsRecord = void;
+alias EcsComponentRecord = void;
+alias EcsMixins = void;
+alias EcsTableRecord = void;
+alias EcsAllocator = void;
+alias EcsStack = void;
+alias EcsStackCursor = void;
+alias EcsHashMap = void;
+alias EcsSparse = void;
+alias EcsMap = void;
+alias EcsData = void;
+alias EcsStrbuf = void;
+
+// ---------------------------------------------------------------------------
+// Function pointer types
+// ---------------------------------------------------------------------------
+
+alias EcsRunAction = fn void(EcsIter* it);
+alias EcsIterAction = fn void(EcsIter* it);
+alias EcsIterNextAction = fn bool(EcsIter* it);
+alias EcsIterFiniAction = fn void(EcsIter* it);
+alias EcsOrderByAction = fn int(EcsEntity e1, void* ptr1, EcsEntity e2, void* ptr2);
+alias EcsSortTableAction = fn void(EcsWorld* world, EcsTable* table, EcsEntity* entities, void* ptr, int size, int lo, int hi, EcsOrderByAction order_by);
+alias EcsGroupByAction = fn ulong(EcsWorld* world, EcsTable* table, EcsId group_id, void* ctx);
+alias EcsGroupCreateAction = fn void*(EcsWorld* world, ulong group_id, void* group_by_ctx);
+alias EcsGroupDeleteAction = fn void(EcsWorld* world, ulong group_id, void* group_ctx, void* group_by_ctx);
+alias EcsModuleAction = fn void(EcsWorld* world);
+alias EcsFiniAction = fn void(EcsWorld* world, void* ctx);
+alias EcsCtxFree = fn void(void* ctx);
+alias EcsCompareAction = fn int(void* ptr1, void* ptr2);
+alias EcsHashValueAction = fn ulong(void* ptr);
+alias EcsXtor = fn void(void* ptr, int count, EcsTypeInfo* type_info);
+alias EcsCopy = fn void(void* dst_ptr, void* src_ptr, int count, EcsTypeInfo* type_info);
+alias EcsMove = fn void(void* dst_ptr, void* src_ptr, int count, EcsTypeInfo* type_info);
+alias EcsCmp = fn int(void* a_ptr, void* b_ptr, EcsTypeInfo* type_info);
+alias EcsEquals = fn bool(void* a_ptr, void* b_ptr, EcsTypeInfo* type_info);
+alias FlecsPolyDtor = fn void(EcsPoly* poly);
+
+// ---------------------------------------------------------------------------
+// Enums
+// ---------------------------------------------------------------------------
+
+constdef EcsInOutKind : int
+{
+	IN_OUT_DEFAULT,
+	IN_OUT_NONE,
+	IN_OUT_FILTER,
+	IN_OUT,
+	IN,
+	OUT,
+}
+
+constdef EcsOperKind : int
+{
+	AND,
+	OR,
+	NOT,
+	OPTIONAL,
+	AND_FROM,
+	OR_FROM,
+	NOT_FROM,
+}
+
+constdef EcsQueryCacheKind : int
+{
+	QUERY_CACHE_DEFAULT,
+	QUERY_CACHE_AUTO,
+	QUERY_CACHE_ALL,
+	QUERY_CACHE_NONE,
+}
+
+constdef EcsTypeKind : int
+{
+	PRIMITIVE_TYPE,
+	BITMASK_TYPE,
+	ENUM_TYPE,
+	STRUCT_TYPE,
+	ARRAY_TYPE,
+	VECTOR_TYPE,
+	OPAQUE_TYPE,
+	TYPE_KIND_LAST,
+}
+
+constdef EcsPrimitiveKind : int
+{
+	BOOL = 1,
+	CHAR,
+	BYTE,
+	U8,
+	U16,
+	U32,
+	U64,
+	I8,
+	I16,
+	I32,
+	I64,
+	F32,
+	F64,
+	UPTR,
+	IPTR,
+	STRING,
+	ENTITY,
+	ID,
+	PRIMITIVE_KIND_LAST,
+}
+
+// ---------------------------------------------------------------------------
+// Structs
+// ---------------------------------------------------------------------------
+
+struct EcsType
+{
+	EcsId* array;
+	int count;
+}
+
+struct EcsTypeHooks
+{
+	EcsXtor ctor;
+	EcsXtor dtor;
+	EcsCopy copy;
+	EcsMove move;
+	EcsCopy copy_ctor;
+	EcsMove move_ctor;
+	EcsMove ctor_move_dtor;
+	EcsMove move_dtor;
+	EcsCmp cmp;
+	EcsEquals equals;
+	EcsFlags32 flags;
+	EcsIterAction on_add;
+	EcsIterAction on_set;
+	EcsIterAction on_remove;
+	EcsIterAction on_replace;
+	void* ctx;
+	void* binding_ctx;
+	void* lifecycle_ctx;
+	EcsCtxFree ctx_free;
+	EcsCtxFree binding_ctx_free;
+	EcsCtxFree lifecycle_ctx_free;
+}
+
+struct EcsTypeInfo
+{
+	EcsSize size;
+	EcsSize alignment;
+	EcsTypeHooks hooks;
+	EcsEntity component;
+	ZString name;
+}
+
+struct EcsTermRef
+{
+	EcsEntity id;
+	ZString name;
+}
+
+struct EcsTerm
+{
+	EcsId id;
+	EcsTermRef src;
+	EcsTermRef first;
+	EcsTermRef second;
+	EcsEntity trav;
+	short inout;
+	short oper;
+	ichar field_index;
+	EcsFlags16 flags_;
+}
+
+struct EcsValue
+{
+	EcsEntity type;
+	void* ptr;
+}
+
+struct EcsEntityDesc
+{
+	int _canary;
+	EcsEntity id;
+	EcsEntity parent;
+	ZString name;
+	ZString sep;
+	ZString root_sep;
+	ZString symbol;
+	bool use_low_id;
+	EcsId* add;
+	EcsValue* set;
+	ZString add_expr;
+}
+
+struct EcsBulkDesc
+{
+	int _canary;
+	EcsEntity* entities;
+	int count;
+	EcsId[32] ids;
+	void** data;
+	EcsTable* table;
+}
+
+struct EcsComponentDesc
+{
+	int _canary;
+	EcsEntity entity;
+	EcsTypeInfo type;
+}
+
+struct EcsQueryDesc
+{
+	int _canary;
+	EcsTerm[32] terms;
+	ZString expr;
+	EcsQueryCacheKind cache_kind;
+	EcsFlags32 flags;
+	EcsOrderByAction order_by_callback;
+	EcsSortTableAction order_by_table_callback;
+	EcsEntity order_by;
+	EcsId group_by;
+	EcsGroupByAction group_by_callback;
+	EcsGroupCreateAction on_group_create;
+	EcsGroupDeleteAction on_group_delete;
+	void* group_by_ctx;
+	EcsCtxFree group_by_ctx_free;
+	void* ctx;
+	void* binding_ctx;
+	EcsCtxFree ctx_free;
+	EcsCtxFree binding_ctx_free;
+	EcsEntity entity;
+}
+
+struct EcsObserverDesc
+{
+	int _canary;
+	EcsEntity entity;
+	EcsQueryDesc query;
+	EcsEntity[8] events;
+	bool yield_existing;
+	bool global_observer;
+	EcsIterAction callback;
+	EcsRunAction run;
+	void* ctx;
+	EcsCtxFree ctx_free;
+	void* callback_ctx;
+	EcsCtxFree callback_ctx_free;
+	void* run_ctx;
+	EcsCtxFree run_ctx_free;
+	int* last_event_id;
+	ichar term_index_;
+	EcsFlags32 flags_;
+}
+
+struct EcsEventDesc
+{
+	EcsEntity event;
+	EcsType* ids;
+	EcsTable* table;
+	EcsTable* other_table;
+	int offset;
+	int count;
+	EcsEntity entity;
+	void* param;
+	void* const_param;
+	EcsPoly* observable;
+	EcsFlags32 flags;
+}
+
+struct EcsSystemDesc
+{
+	int _canary;
+	EcsEntity entity;
+	EcsQueryDesc query;
+	EcsEntity phase;
+	EcsIterAction callback;
+	EcsRunAction run;
+	void* ctx;
+	EcsCtxFree ctx_free;
+	void* callback_ctx;
+	EcsCtxFree callback_ctx_free;
+	void* run_ctx;
+	EcsCtxFree run_ctx_free;
+	float interval;
+	int rate;
+	EcsEntity tick_source;
+	bool multi_threaded;
+	bool immediate;
+}
+
+struct EcsPipelineDesc
+{
+	EcsEntity entity;
+	EcsQueryDesc query;
+}
+
+struct EcsBuildInfo
+{
+	ZString compiler;
+	ZString* addons;
+	ZString* flags;
+	ZString version;
+	short version_major;
+	short version_minor;
+	short version_patch;
+	bool debug;
+	bool sanitize;
+	bool perf_trace;
+}
+
+struct EcsWorldInfoCmd
+{
+	long add_count;
+	long remove_count;
+	long delete_count;
+	long clear_count;
+	long set_count;
+	long ensure_count;
+	long modified_count;
+	long discard_count;
+	long event_count;
+	long other_count;
+	long batched_entity_count;
+	long batched_command_count;
+}
+
+struct EcsWorldInfo
+{
+	EcsEntity last_component_id;
+	float delta_time_raw;
+	float delta_time;
+	float time_scale;
+	float target_fps;
+	float frame_time_total;
+	float system_time_total;
+	float emit_time_total;
+	float merge_time_total;
+	float rematch_time_total;
+	double world_time_total;
+	double world_time_total_raw;
+	long frame_count_total;
+	long merge_count_total;
+	long eval_comp_monitors_total;
+	long rematch_count_total;
+	long id_create_total;
+	long id_delete_total;
+	long table_create_total;
+	long table_delete_total;
+	long pipeline_build_count_total;
+	long systems_ran_total;
+	long observers_ran_total;
+	long queries_ran_total;
+	int tag_id_count;
+	int component_id_count;
+	int pair_id_count;
+	int table_count;
+	uint creation_time;
+	EcsWorldInfoCmd cmd;
+	ZString name_prefix;
+}
+
+struct EcsQueryGroupInfo
+{
+	ulong id;
+	int match_count;
+	int table_count;
+	void* ctx;
+}
+
+struct EcsQueryCount
+{
+	int results;
+	int entities;
+	int tables;
+}
+
+struct EcsVec
+{
+	void* array;
+	int count;
+	int size;
+}
+
+struct EcsEntityRange
+{
+	uint min;
+	uint max;
+	uint cur;
+	EcsVec recycled;
+}
+
+struct EcsRef
+{
+	EcsEntity entity;
+	ulong table_id;
+	uint table_version_fast;
+	ushort table_version;
+	void* ptr;
+	EcsEntity id;
+}
+
+struct EcsTableRange
+{
+	EcsTable* table;
+	int offset;
+	int count;
+}
+
+struct EcsVar
+{
+	EcsTableRange range;
+	EcsEntity entity;
+}
+
+struct EcsPageIter
+{
+	int offset;
+	int limit;
+	int remaining;
+}
+
+struct EcsWorkerIter
+{
+	int index;
+	int count;
+}
+
+struct EcsTableCacheIter
+{
+	void* cur;
+	void* next;
+	bool iter_fill;
+	bool iter_empty;
+}
+
+struct EcsEachIter
+{
+	EcsTableCacheIter it;
+	EcsId ids;
+	EcsEntity sources;
+	EcsSize sizes;
+	short columns;
+	EcsTableRecord* trs;
+}
+
+struct EcsQueryOpProfile
+{
+	int[2] count;
+}
+
+struct EcsQueryIter
+{
+	EcsVar* vars;
+	void* query_vars;
+	void* ops;
+	void* op_ctx;
+	ulong* written;
+	void* group;
+	EcsVec* tables;
+	EcsVec* all_tables;
+	void* elem;
+	int cur;
+	int all_cur;
+	EcsQueryOpProfile* profile;
+	short op;
+	bool iter_single_group;
+}
+
+union EcsIterUnion
+{
+	EcsQueryIter query;
+	EcsPageIter page;
+	EcsWorkerIter worker;
+	EcsEachIter each;
+}
+
+struct EcsIterPrivate
+{
+	EcsIterUnion iter;
+	void* entity_iter;
+	EcsStackCursor* stack_cursor;
+}
+
+struct EcsIter
+{
+	EcsWorld* world;
+	EcsWorld* real_world;
+	int offset;
+	int count;
+	EcsEntity* entities;
+	void** ptrs;
+	EcsTableRecord** trs;
+	short* columns;
+	EcsSize* sizes;
+	EcsTable* table;
+	EcsTable* other_table;
+	EcsId* ids;
+	EcsEntity* sources;
+	EcsFlags64 constrained_vars;
+	EcsFlags32 set_fields;
+	EcsFlags32 ref_fields;
+	EcsFlags32 row_fields;
+	EcsFlags32 up_fields;
+	EcsEntity system;
+	EcsEntity event;
+	EcsId event_id;
+	int event_cur;
+	ichar field_count;
+	ichar term_index;
+	EcsQuery* query;
+	void* param;
+	void* ctx;
+	void* binding_ctx;
+	void* callback_ctx;
+	void* run_ctx;
+	float delta_time;
+	float delta_system_time;
+	int frame_offset;
+	EcsFlags32 flags;
+	EcsEntity interrupted_by;
+	EcsIterPrivate priv_;
+	EcsIterNextAction next;
+	EcsIterAction callback;
+	EcsIterFiniAction fini;
+	EcsIter* chain_it;
+}
+
+struct EcsIdentifier
+{
+	ZString value;
+	EcsSize length;
+	ulong hash;
+	ulong index_hash;
+	EcsHashMap* index;
+}
+
+struct EcsComponent
+{
+	EcsSize size;
+	EcsSize alignment;
+}
+
+struct EcsPolyC
+{
+	EcsPoly* poly;
+}
+
+struct EcsDefaultChildComponent
+{
+	EcsId component;
+}
+
+struct EcsParent
+{
+	EcsEntity value;
+}
+
+struct EcsTreeSpawnerChild
+{
+	ZString child_name;
+	EcsTable* table;
+	uint child;
+	int parent_index;
+}
+
+struct EcsTreeSpawner
+{
+	EcsVec children;
+}
+
+// ---------------------------------------------------------------------------
+// JSON addon
+// ---------------------------------------------------------------------------
+
+alias EcsJsonLookupAction = fn EcsEntity(EcsWorld* world, ZString value, void* ctx);
+alias EcsJsonComponentFilter = fn bool(EcsWorld* world, EcsEntity component);
+
+struct EcsFromJsonDesc
+{
+	ZString name;
+	ZString expr;
+	EcsJsonLookupAction lookup_action;
+	void* lookup_ctx;
+	bool strict;
+}
+
+struct EcsEntityToJsonDesc
+{
+	bool serialize_entity_id;
+	bool serialize_doc;
+	bool serialize_full_paths;
+	bool serialize_inherited;
+	bool serialize_values;
+	bool serialize_builtin;
+	bool serialize_type_info;
+	bool serialize_alerts;
+	EcsEntity serialize_refs;
+	bool serialize_matches;
+	EcsJsonComponentFilter component_filter;
+}
+
+struct EcsWorldToJsonDesc
+{
+	bool serialize_builtin;
+	bool serialize_modules;
+}
+
+// ---------------------------------------------------------------------------
+// Constants
+// ---------------------------------------------------------------------------
+
+extern const EcsId ECS_PAIR @cname("ECS_PAIR");
+extern const EcsId ECS_AUTO_OVERRIDE @cname("ECS_AUTO_OVERRIDE");
+extern const EcsId ECS_TOGGLE @cname("ECS_TOGGLE");
+extern const EcsId ECS_VALUE_PAIR @cname("ECS_VALUE_PAIR");
+
+extern const EcsEntity ECS_ON_ADD @cname("EcsOnAdd");
+extern const EcsEntity ECS_ON_REMOVE @cname("EcsOnRemove");
+extern const EcsEntity ECS_ON_SET @cname("EcsOnSet");
+extern const EcsEntity ECS_MONITOR @cname("EcsMonitor");
+extern const EcsEntity ECS_ON_TABLE_CREATE @cname("EcsOnTableCreate");
+extern const EcsEntity ECS_ON_TABLE_DELETE @cname("EcsOnTableDelete");
+extern const EcsEntity ECS_ON_DELETE @cname("EcsOnDelete");
+extern const EcsEntity ECS_ON_DELETE_TARGET @cname("EcsOnDeleteTarget");
+extern const EcsEntity ECS_REMOVE @cname("EcsRemove");
+extern const EcsEntity ECS_DELETE @cname("EcsDelete");
+extern const EcsEntity ECS_PANIC @cname("EcsPanic");
+extern const EcsEntity ECS_ON_INSTANTIATE @cname("EcsOnInstantiate");
+extern const EcsEntity ECS_OVERRIDE @cname("EcsOverride");
+extern const EcsEntity ECS_INHERIT @cname("EcsInherit");
+extern const EcsEntity ECS_DONT_INHERIT @cname("EcsDontInherit");
+extern const EcsEntity ECS_IS_A @cname("EcsIsA");
+extern const EcsEntity ECS_CHILD_OF @cname("EcsChildOf");
+extern const EcsEntity ECS_DEPENDS_ON @cname("EcsDependsOn");
+extern const EcsEntity ECS_SLOT_OF @cname("EcsSlotOf");
+extern const EcsEntity ECS_ORDERED_CHILDREN @cname("EcsOrderedChildren");
+extern const EcsEntity ECS_MODULE @cname("EcsModule");
+extern const EcsEntity ECS_PREFAB @cname("EcsPrefab");
+extern const EcsEntity ECS_DISABLED @cname("EcsDisabled");
+extern const EcsEntity ECS_NOT_QUERYABLE @cname("EcsNotQueryable");
+extern const EcsEntity ECS_NAME @cname("EcsName");
+extern const EcsEntity ECS_SYMBOL @cname("EcsSymbol");
+extern const EcsEntity ECS_ALIAS @cname("EcsAlias");
+extern const EcsEntity ECS_PARENT_DEPTH @cname("EcsParentDepth");
+extern const EcsEntity ECS_QUERY @cname("EcsQuery");
+extern const EcsEntity ECS_OBSERVER @cname("EcsObserver");
+extern const EcsEntity ECS_SYSTEM @cname("EcsSystem");
+extern const EcsEntity ECS_WORLD @cname("EcsWorld");
+extern const EcsEntity ECS_WILDCARD @cname("EcsWildcard");
+extern const EcsEntity ECS_ANY @cname("EcsAny");
+extern const EcsEntity ECS_THIS @cname("EcsThis");
+extern const EcsEntity ECS_VARIABLE @cname("EcsVariable");
+extern const EcsEntity ECS_TRANSITIVE @cname("EcsTransitive");
+extern const EcsEntity ECS_REFLEXIVE @cname("EcsReflexive");
+extern const EcsEntity ECS_FINAL @cname("EcsFinal");
+extern const EcsEntity ECS_INHERITABLE @cname("EcsInheritable");
+extern const EcsEntity ECS_SYMMETRIC @cname("EcsSymmetric");
+extern const EcsEntity ECS_EXCLUSIVE @cname("EcsExclusive");
+extern const EcsEntity ECS_ACYCLIC @cname("EcsAcyclic");
+extern const EcsEntity ECS_TRAVERSABLE @cname("EcsTraversable");
+extern const EcsEntity ECS_WITH @cname("EcsWith");
+extern const EcsEntity ECS_ONE_OF @cname("EcsOneOf");
+extern const EcsEntity ECS_CAN_TOGGLE @cname("EcsCanToggle");
+extern const EcsEntity ECS_TRAIT @cname("EcsTrait");
+extern const EcsEntity ECS_RELATIONSHIP @cname("EcsRelationship");
+extern const EcsEntity ECS_TARGET @cname("EcsTarget");
+extern const EcsEntity ECS_PAIR_IS_TAG @cname("EcsPairIsTag");
+extern const EcsEntity ECS_SINGLETON @cname("EcsSingleton");
+extern const EcsEntity ECS_SPARSE @cname("EcsSparse");
+extern const EcsEntity ECS_DONT_FRAGMENT @cname("EcsDontFragment");
+extern const EcsEntity ECS_EMPTY @cname("EcsEmpty");
+extern const EcsEntity ECS_FLECS @cname("EcsFlecs");
+extern const EcsEntity ECS_FLECS_CORE @cname("EcsFlecsCore");
+extern const EcsEntity ECS_CONSTANT @cname("EcsConstant");
+
+extern const EcsEntity ECS_ON_START @cname("EcsOnStart");
+extern const EcsEntity ECS_PRE_FRAME @cname("EcsPreFrame");
+extern const EcsEntity ECS_ON_LOAD @cname("EcsOnLoad");
+extern const EcsEntity ECS_POST_LOAD @cname("EcsPostLoad");
+extern const EcsEntity ECS_PRE_UPDATE @cname("EcsPreUpdate");
+extern const EcsEntity ECS_ON_UPDATE @cname("EcsOnUpdate");
+extern const EcsEntity ECS_ON_VALIDATE @cname("EcsOnValidate");
+extern const EcsEntity ECS_POST_UPDATE @cname("EcsPostUpdate");
+extern const EcsEntity ECS_PRE_STORE @cname("EcsPreStore");
+extern const EcsEntity ECS_ON_STORE @cname("EcsOnStore");
+extern const EcsEntity ECS_POST_FRAME @cname("EcsPostFrame");
+extern const EcsEntity ECS_PHASE @cname("EcsPhase");
+
+// ---------------------------------------------------------------------------
+// Meta addon
+// ---------------------------------------------------------------------------
+
+struct EcsMemberValueRange
+{
+	double min;
+	double max;
+}
+
+struct EcsMember
+{
+	ZString name;
+	EcsEntity type;
+	int count;
+	int offset;
+	EcsEntity unit;
+	bool use_offset;
+	EcsMemberValueRange range;
+	EcsMemberValueRange error_range;
+	EcsMemberValueRange warning_range;
+	EcsSize size;
+	EcsEntity member;
+}
+
+struct EcsMemberC
+{
+	EcsEntity type;
+	int count;
+	EcsEntity unit;
+	int offset;
+	bool use_offset;
+}
+
+struct EcsStruct
+{
+	EcsVec members;
+}
+
+struct EcsPrimitive
+{
+	EcsPrimitiveKind kind;
+}
+
+struct EcsEnum
+{
+	EcsEntity underlying_type;
+}
+
+struct EcsBitmask
+{
+	int dummy_;
+}
+
+struct EcsArray
+{
+	EcsEntity type;
+	int count;
+}
+
+struct EcsVector
+{
+	EcsEntity type;
+}
+
+struct EcsEnumConstant
+{
+	ZString name;
+	long value;
+	ulong value_unsigned;
+	EcsEntity constant;
+}
+
+struct EcsBitmaskConstant
+{
+	ZString name;
+	ulong value;
+	long _unused;
+	EcsEntity constant;
+}
+
+struct EcsPrimitiveDesc
+{
+	EcsEntity entity;
+	EcsPrimitiveKind kind;
+}
+
+struct EcsEnumDesc
+{
+	EcsEntity entity;
+	EcsEnumConstant[32] constants;
+	EcsEntity underlying_type;
+}
+
+struct EcsBitmaskDesc
+{
+	EcsEntity entity;
+	EcsBitmaskConstant[32] constants;
+}
+
+struct EcsArrayDesc
+{
+	EcsEntity entity;
+	EcsEntity type;
+	int count;
+}
+
+struct EcsVectorDesc
+{
+	EcsEntity entity;
+	EcsEntity type;
+}
+
+struct EcsStructDesc
+{
+	EcsEntity entity;
+	EcsMember[32] members;
+	bool create_member_entities;
+}
+
+// Built-in meta type entities.
+extern const EcsEntity ECS_TYPE_BOOL @cname("FLECS_IDecs_bool_tID_");
+extern const EcsEntity ECS_TYPE_CHAR @cname("FLECS_IDecs_char_tID_");
+extern const EcsEntity ECS_TYPE_BYTE @cname("FLECS_IDecs_byte_tID_");
+extern const EcsEntity ECS_TYPE_U8 @cname("FLECS_IDecs_u8_tID_");
+extern const EcsEntity ECS_TYPE_U16 @cname("FLECS_IDecs_u16_tID_");
+extern const EcsEntity ECS_TYPE_U32 @cname("FLECS_IDecs_u32_tID_");
+extern const EcsEntity ECS_TYPE_U64 @cname("FLECS_IDecs_u64_tID_");
+extern const EcsEntity ECS_TYPE_UPTR @cname("FLECS_IDecs_uptr_tID_");
+extern const EcsEntity ECS_TYPE_I8 @cname("FLECS_IDecs_i8_tID_");
+extern const EcsEntity ECS_TYPE_I16 @cname("FLECS_IDecs_i16_tID_");
+extern const EcsEntity ECS_TYPE_I32 @cname("FLECS_IDecs_i32_tID_");
+extern const EcsEntity ECS_TYPE_I64 @cname("FLECS_IDecs_i64_tID_");
+extern const EcsEntity ECS_TYPE_IPTR @cname("FLECS_IDecs_iptr_tID_");
+extern const EcsEntity ECS_TYPE_F32 @cname("FLECS_IDecs_f32_tID_");
+extern const EcsEntity ECS_TYPE_F64 @cname("FLECS_IDecs_f64_tID_");
+extern const EcsEntity ECS_TYPE_STRING @cname("FLECS_IDecs_string_tID_");
+extern const EcsEntity ECS_TYPE_ENTITY @cname("FLECS_IDecs_entity_tID_");
+extern const EcsEntity ECS_TYPE_ID @cname("FLECS_IDecs_id_tID_");
+
+// ---------------------------------------------------------------------------
+// Script addon
+// ---------------------------------------------------------------------------
+
+alias EcsScript = void;
+alias EcsScriptVars = void;
+alias EcsScriptRuntime = void;
+
+struct EcsScriptEvalDesc
+{
+	EcsScriptVars* vars;
+	EcsScriptRuntime* runtime;
+}
+
+struct EcsScriptEvalResult
+{
+	ZString error;
+	int line;
+	int column;
+}
+
+struct EcsScriptDesc
+{
+	EcsEntity entity;
+	ZString filename;
+	ZString code;
+}
+
+// ---------------------------------------------------------------------------
+// Metrics addon
+// ---------------------------------------------------------------------------
+
+struct EcsMetricDesc
+{
+	int _canary;
+	EcsEntity entity;
+	EcsEntity member;
+	ZString dotmember;
+	EcsId id;
+	bool targets;
+	EcsEntity kind;
+	ZString brief;
+}
+
+// ---------------------------------------------------------------------------
+// Alerts addon
+// ---------------------------------------------------------------------------
+
+struct EcsAlertSeverityFilter
+{
+	EcsEntity severity;
+	EcsId with;
+	ZString var_name;
+	int _var_index;
+}
+
+struct EcsAlertDesc
+{
+	int _canary;
+	EcsEntity entity;
+	EcsQueryDesc query;
+	ZString message;
+	ZString doc_name;
+	ZString brief;
+	EcsEntity severity;
+	EcsAlertSeverityFilter[4] severity_filters;
+	float retain_period;
+	EcsEntity member;
+	EcsId id;
+	ZString var_name;
+}
+
+// ---------------------------------------------------------------------------
+// App addon
+// ---------------------------------------------------------------------------
+
+alias EcsAppInitAction = fn int(EcsWorld* world);
+alias EcsAppRunAction = fn int(EcsWorld* world, EcsAppDesc* desc);
+alias EcsAppFrameAction = fn int(EcsWorld* world, EcsAppDesc* desc);
+
+struct EcsAppDesc
+{
+	float target_fps;
+	float delta_time;
+	int threads;
+	int frames;
+	bool enable_rest;
+	bool enable_stats;
+	ushort port;
+	EcsAppInitAction init;
+	void* ctx;
+}
+
+// ---------------------------------------------------------------------------
+// Units addon
+// ---------------------------------------------------------------------------
+
+struct EcsUnitTranslation
+{
+	int factor;
+	int power;
+}
+
+struct EcsUnitDesc
+{
+	EcsEntity entity;
+	ZString symbol;
+	EcsEntity quantity;
+	EcsEntity base;
+	EcsEntity over;
+	EcsUnitTranslation translation;
+	EcsEntity prefix;
+}
+
+struct EcsUnitPrefixDesc
+{
+	EcsEntity entity;
+	ZString symbol;
+	EcsUnitTranslation translation;
+}
+
+// ---------------------------------------------------------------------------
+// HTTP / REST addons
+// ---------------------------------------------------------------------------
+
+alias EcsHttpServer = void;
+
+struct EcsHttpServerDesc
+{
+	void* callback;
+	void* ctx;
+	ushort port;
+	ZString ipaddr;
+	int send_queue_wait_ms;
+	double cache_timeout;
+	double cache_purge_timeout;
+}
+
+// ---------------------------------------------------------------------------
+// OS API addon
+// ---------------------------------------------------------------------------
+
+alias EcsOsThread = uptr;
+alias EcsOsCond = uptr;
+alias EcsOsMutex = uptr;
+alias EcsOsDl = uptr;
+alias EcsOsSock = uptr;
+alias EcsOsThreadId = ulong;
+alias EcsOsProc = fn void();
+
+struct EcsTime
+{
+	uint sec;
+	uint nanosec;
+}
+
+alias EcsOsThreadCallback = fn void*(void* param);
+alias EcsOsApiInit = fn void();
+alias EcsOsApiFini = fn void();
+alias EcsOsApiMalloc = fn void*(int size);
+alias EcsOsApiRealloc = fn void*(void* ptr, int size);
+alias EcsOsApiCalloc = fn void*(int size);
+alias EcsOsApiFree = fn void(void* ptr);
+alias EcsOsApiStrdup = fn ZString(ZString str);
+alias EcsOsApiThreadNew = fn EcsOsThread(EcsOsThreadCallback callback, void* param);
+alias EcsOsApiThreadJoin = fn void*(EcsOsThread thread);
+alias EcsOsApiThreadSelf = fn EcsOsThreadId();
+alias EcsOsApiAinc = fn int(int* value);
+alias EcsOsApiLainc = fn long(long* value);
+alias EcsOsApiMutexNew = fn EcsOsMutex();
+alias EcsOsApiMutexLock = fn void(EcsOsMutex mutex);
+alias EcsOsApiMutexFree = fn void(EcsOsMutex mutex);
+alias EcsOsApiCondNew = fn EcsOsCond();
+alias EcsOsApiCondFree = fn void(EcsOsCond cond);
+alias EcsOsApiCondSignal = fn void(EcsOsCond cond);
+alias EcsOsApiCondBroadcast = fn void(EcsOsCond cond);
+alias EcsOsApiCondWait = fn void(EcsOsCond cond, EcsOsMutex mutex);
+alias EcsOsApiSleep = fn void(int sec, int nanosec);
+alias EcsOsApiGetTime = fn void(EcsTime* time_out);
+alias EcsOsApiNow = fn ulong();
+alias EcsOsApiLog = fn void(int level, ZString file, int line, ZString msg);
+alias EcsOsApiAbort = fn void();
+alias EcsOsApiDlopen = fn EcsOsDl(ZString libname);
+alias EcsOsApiDlproc = fn EcsOsProc(EcsOsDl lib, ZString procname);
+alias EcsOsApiDlclose = fn void(EcsOsDl lib);
+alias EcsOsApiModuleToPath = fn ZString(ZString module_id);
+alias EcsOsApiFopen = fn void*(ZString file, ZString mode);
+alias EcsOsApiFclose = fn void(void* file);
+alias EcsOsApiPerfTrace = fn void(ZString filename, usz line, ZString name);
+
+struct EcsOsApi
+{
+	EcsOsApiInit init_;
+	EcsOsApiFini fini_;
+	EcsOsApiMalloc malloc_;
+	EcsOsApiRealloc realloc_;
+	EcsOsApiCalloc calloc_;
+	EcsOsApiFree free_;
+	EcsOsApiStrdup strdup_;
+	EcsOsApiThreadNew thread_new_;
+	EcsOsApiThreadJoin thread_join_;
+	EcsOsApiThreadSelf thread_self_;
+	EcsOsApiThreadNew task_new_;
+	EcsOsApiThreadJoin task_join_;
+	EcsOsApiAinc ainc_;
+	EcsOsApiAinc adec_;
+	EcsOsApiLainc lainc_;
+	EcsOsApiLainc ladec_;
+	EcsOsApiMutexNew mutex_new_;
+	EcsOsApiMutexFree mutex_free_;
+	EcsOsApiMutexLock mutex_lock_;
+	EcsOsApiMutexLock mutex_unlock_;
+	EcsOsApiCondNew cond_new_;
+	EcsOsApiCondFree cond_free_;
+	EcsOsApiCondSignal cond_signal_;
+	EcsOsApiCondBroadcast cond_broadcast_;
+	EcsOsApiCondWait cond_wait_;
+	EcsOsApiSleep sleep_;
+	EcsOsApiNow now_;
+	EcsOsApiGetTime get_time_;
+	EcsOsApiLog log_;
+	EcsOsApiAbort abort_;
+	EcsOsApiDlopen dlopen_;
+	EcsOsApiDlproc dlproc_;
+	EcsOsApiDlclose dlclose_;
+	EcsOsApiModuleToPath module_to_dl_;
+	EcsOsApiModuleToPath module_to_etc_;
+	EcsOsApiFopen fopen_;
+	EcsOsApiFclose fclose_;
+	EcsOsApiPerfTrace perf_trace_push_;
+	EcsOsApiPerfTrace perf_trace_pop_;
+	int log_level_;
+	int log_indent_;
+	int log_last_error_;
+	long log_last_timestamp_;
+	EcsFlags32 flags_;
+	void* log_out_;
+}
+
+// ---------------------------------------------------------------------------
+// Stats addon
+// ---------------------------------------------------------------------------
+
+struct EcsGauge
+{
+	float[60] avg;
+	float[60] min;
+	float[60] max;
+}
+
+struct EcsCounter
+{
+	EcsGauge rate;
+	double[60] value;
+}
+
+union EcsMetric
+{
+	EcsGauge gauge;
+	EcsCounter counter;
+}
+
+struct EcsWorldStatsEntities
+{
+	EcsMetric count;
+	EcsMetric not_alive_count;
+}
+
+struct EcsWorldStatsComponents
+{
+	EcsMetric tag_count;
+	EcsMetric component_count;
+	EcsMetric pair_count;
+	EcsMetric type_count;
+	EcsMetric create_count;
+	EcsMetric delete_count;
+}
+
+struct EcsWorldStatsTables
+{
+	EcsMetric count;
+	EcsMetric empty_count;
+	EcsMetric create_count;
+	EcsMetric delete_count;
+}
+
+struct EcsWorldStatsQueries
+{
+	EcsMetric query_count;
+	EcsMetric observer_count;
+	EcsMetric system_count;
+}
+
+struct EcsWorldStatsCommands
+{
+	EcsMetric add_count;
+	EcsMetric remove_count;
+	EcsMetric delete_count;
+	EcsMetric clear_count;
+	EcsMetric set_count;
+	EcsMetric ensure_count;
+	EcsMetric modified_count;
+	EcsMetric other_count;
+	EcsMetric discard_count;
+	EcsMetric batched_entity_count;
+	EcsMetric batched_count;
+}
+
+struct EcsWorldStatsFrame
+{
+	EcsMetric frame_count;
+	EcsMetric merge_count;
+	EcsMetric rematch_count;
+	EcsMetric pipeline_build_count;
+	EcsMetric systems_ran;
+	EcsMetric observers_ran;
+	EcsMetric event_emit_count;
+}
+
+struct EcsWorldStatsPerformance
+{
+	EcsMetric world_time_raw;
+	EcsMetric world_time;
+	EcsMetric frame_time;
+	EcsMetric system_time;
+	EcsMetric emit_time;
+	EcsMetric merge_time;
+	EcsMetric rematch_time;
+	EcsMetric fps;
+	EcsMetric delta_time;
+}
+
+struct EcsWorldStatsMemory
+{
+	EcsMetric alloc_count;
+	EcsMetric realloc_count;
+	EcsMetric free_count;
+	EcsMetric outstanding_alloc_count;
+	EcsMetric block_alloc_count;
+	EcsMetric block_free_count;
+	EcsMetric block_outstanding_alloc_count;
+	EcsMetric stack_alloc_count;
+	EcsMetric stack_free_count;
+	EcsMetric stack_outstanding_alloc_count;
+}
+
+struct EcsWorldStatsHttp
+{
+	EcsMetric request_received_count;
+	EcsMetric request_invalid_count;
+	EcsMetric request_handled_ok_count;
+	EcsMetric request_handled_error_count;
+	EcsMetric request_not_handled_count;
+	EcsMetric request_preflight_count;
+	EcsMetric send_ok_count;
+	EcsMetric send_error_count;
+	EcsMetric busy_count;
+}
+
+struct EcsWorldStats
+{
+	long first_;
+	EcsWorldStatsEntities entities;
+	EcsWorldStatsComponents components;
+	EcsWorldStatsTables tables;
+	EcsWorldStatsQueries queries;
+	EcsWorldStatsCommands commands;
+	EcsWorldStatsFrame frame;
+	EcsWorldStatsPerformance performance;
+	EcsWorldStatsMemory memory;
+	EcsWorldStatsHttp http;
+	long last_;
+	int t;
+}
+
+struct EcsQueryStats
+{
+	long first_;
+	EcsMetric result_count;
+	EcsMetric matched_table_count;
+	EcsMetric matched_entity_count;
+	long last_;
+	int t;
+}
+
+struct EcsSystemStats
+{
+	long first_;
+	EcsMetric time_spent;
+	long last_;
+	bool task;
+	EcsQueryStats query;
+}
+
+struct EcsSyncStats
+{
+	long first_;
+	EcsMetric time_spent;
+	EcsMetric commands_enqueued;
+	long last_;
+	int system_count;
+	bool multi_threaded;
+	bool immediate;
+}
+
+struct EcsPipelineStats
+{
+	ichar canary_;
+	EcsVec systems;
+	EcsVec sync_points;
+	int t;
+	int system_count;
+	int active_system_count;
+	int rebuild_count;
+}

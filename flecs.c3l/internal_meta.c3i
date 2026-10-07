@@ -1,0 +1,14 @@
+// flecs::internal — meta (reflection) addon (Flecs 4.1.6).
+
+module flecs::internal;
+
+extern fn EcsEntity ecs_primitive_init(EcsWorld* world, EcsPrimitiveDesc* desc);
+extern fn EcsEntity ecs_enum_init(EcsWorld* world, EcsEnumDesc* desc);
+extern fn EcsEntity ecs_bitmask_init(EcsWorld* world, EcsBitmaskDesc* desc);
+extern fn EcsEntity ecs_array_init(EcsWorld* world, EcsArrayDesc* desc);
+extern fn EcsEntity ecs_vector_init(EcsWorld* world, EcsVectorDesc* desc);
+extern fn EcsEntity ecs_struct_init(EcsWorld* world, EcsStructDesc* desc);
+extern fn int ecs_struct_add_member(EcsWorld* world, EcsEntity type, EcsMember* member);
+extern fn EcsMember* ecs_struct_get_member(EcsWorld* world, EcsEntity type, ZString name);
+extern fn EcsMember* ecs_struct_get_nth_member(EcsWorld* world, EcsEntity type, int i);
+extern fn int ecs_meta_from_desc(EcsWorld* world, EcsEntity component, EcsTypeKind kind, ZString desc);

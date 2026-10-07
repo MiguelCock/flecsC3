@@ -1,0 +1,47 @@
+// flecs::internal — extra declarations surfaced by the example survey.
+
+module flecs::internal;
+
+// --- JSON / expressions ----------------------------------------------------
+
+extern fn ZString ecs_ptr_to_expr(EcsWorld* world, EcsEntity type, void* data);
+extern fn ZString ecs_array_to_json(EcsWorld* world, EcsEntity type, void* data, int count);
+
+struct EcsIterToJsonDesc
+{
+	bool serialize_entity_ids;
+	bool serialize_values;
+	bool serialize_builtin;
+	bool serialize_doc;
+	bool serialize_full_paths;
+	bool serialize_fields;
+	bool serialize_inherited;
+	bool serialize_table;
+	bool serialize_type_info;
+	bool serialize_field_info;
+	bool serialize_query_info;
+	bool serialize_query_plan;
+	bool serialize_query_profile;
+	bool dont_serialize_results;
+	bool serialize_alerts;
+	EcsEntity serialize_refs;
+	bool serialize_matches;
+	bool serialize_parents_before_children;
+	EcsJsonComponentFilter component_filter;
+	EcsPoly* query;
+}
+
+extern fn ZString ecs_iter_to_json(EcsIter* iter, EcsIterToJsonDesc* desc);
+
+// --- script ----------------------------------------------------------------
+
+extern fn int ecs_script_update(EcsWorld* world, EcsEntity script, EcsEntity instance, ZString code);
+
+// --- stats -----------------------------------------------------------------
+
+extern fn void flecs_stats_import(EcsWorld* world) @cname("FlecsStatsImport");
+
+// --- misc ------------------------------------------------------------------
+
+extern fn int ecs_search(EcsWorld* world, EcsTable* table, EcsId component, EcsId* component_out);
+extern fn EcsMap* ecs_query_get_groups(EcsQuery* query);

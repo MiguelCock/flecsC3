@@ -1,0 +1,11 @@
+// flecs::internal — OS API addon.
+
+module flecs::internal;
+
+extern fn void ecs_os_set_api_defaults();
+extern fn void ecs_os_set_api(EcsOsApi* os_api);
+extern fn EcsOsApi ecs_os_get_api();
+extern fn void ecs_os_init();
+extern fn void ecs_os_fini();
+
+extern EcsOsApi ecs_os_api @cname("ecs_os_api");
